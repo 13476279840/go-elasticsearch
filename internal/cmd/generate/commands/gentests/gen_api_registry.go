@@ -27,7 +27,7 @@ func init() {
 	if pathEnv := os.Getenv("PACKAGE_PATH"); pathEnv != "" {
 		packagePath = pathEnv
 	} else {
-		packagePath = "../../../../../"
+		packagePath = "../../../../../esapi"
 	}
 }
 
@@ -37,12 +37,11 @@ func main() {
 	log.Println("Generating API registry into api_registry.gen.go")
 	log.Println(strings.Repeat("-", 80))
 
-	buildPkg, err := build.Import(
-		"github.com/elastic/go-elasticsearch/esapi",
+	buildPkg, err := build.ImportDir(
 		packagePath,
 		build.ImportComment)
 	if err != nil {
-		log.Fatalf("ERROR: %s", err)
+		log.Fatalf("Error importing package: %s", err)
 	}
 
 	log.Printf("Pkg: %s\nDir: %s\n\n", buildPkg.Name, buildPkg.Dir)
@@ -54,7 +53,7 @@ func main() {
 		fpath := filepath.Join(buildPkg.Dir, fname)
 		f, err := parser.ParseFile(fset, fpath, nil, parser.DeclarationErrors|parser.ParseComments)
 		if err != nil {
-			log.Fatalf("ERROR: %s", err)
+			log.Fatalf("Error parsing file: %s", err)
 		}
 		files[i] = f
 	}
@@ -63,7 +62,7 @@ func main() {
 	inf := types.Info{Defs: make(map[*ast.Ident]types.Object)}
 	_, err = cfg.Check(buildPkg.ImportPath, fset, files, &inf)
 	if err != nil {
-		log.Fatalf("ERROR: %s", err)
+		log.Fatalf("Error checking package: %s", err)
 	}
 
 	var s = time.Now()
@@ -86,6 +85,7 @@ func main() {
 				if !ok {
 					continue
 				}
+				fmt.Println(typeSpec.Name)
 				obj := inf.Defs[typeSpec.Name]
 				if obj == nil || !obj.Exported() {
 					continue
